@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Resolve the project root (one level up from bin/)
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+exec uv run --project "$PROJECT_ROOT" python -m chess_screensaver "$@"

@@ -1,0 +1,17 @@
+# Python virtualenv — never commit
+.venv/
+
+# Python byte-code
+__pycache__/
+*.pyc
+*.pyo
+
+# Build artifacts
+dist/
+*.egg-info/
+.eggs/
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
