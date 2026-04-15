@@ -2,7 +2,7 @@
 
 A terminal chess screensaver for [Omarchy](https://omarchy.org/) that replays elite Grandmaster games from the Lichess Elite Database — one move every two seconds, fullscreen, with live move log and match metadata.
 
-<video src="omarchy-chess-screensaver-demo.mp4" controls width="100%"></video>
+<video src="https://github.com/user-attachments/assets/27a41488-722e-4820-82ed-bd85b3f15ece" controls width="100%"></video>
 
 ---
 
