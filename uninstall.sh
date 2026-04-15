@@ -21,7 +21,18 @@ _remove_from_file() {
 _remove_from_file "$HOME/.bashrc"
 [ -f "$HOME/.zshrc" ] && _remove_from_file "$HOME/.zshrc"
 
-# ── 2. Optionally remove .venv/ ───────────────────────────────────────────
+# ── 2. Remove UWSM env.d entry (for Hyprland / UWSM) ────────────────────
+# The install script creates this file solely for this project, so it is
+# safe to delete the whole file.
+UWSM_ENV_D_FILE="$HOME/.config/uwsm/env.d/omarchy-chess-screensaver.sh"
+if [ -f "$UWSM_ENV_D_FILE" ]; then
+    rm "$UWSM_ENV_D_FILE"
+    echo "Removed $UWSM_ENV_D_FILE"
+else
+    echo "No UWSM env.d entry found — skipping."
+fi
+
+# ── 3. Optionally remove .venv/ ───────────────────────────────────────────
 if [ -d "$SCRIPT_DIR/.venv" ]; then
     printf "Remove .venv/ (Python virtualenv inside repo)? [y/N] "
     read -r answer
@@ -36,9 +47,11 @@ if [ -d "$SCRIPT_DIR/.venv" ]; then
     esac
 fi
 
-# ── 3. Summary ────────────────────────────────────────────────────────────
+# ── 4. Summary ────────────────────────────────────────────────────────────
 echo ""
 echo "Uninstallation complete."
+echo ""
+echo "Log out and back in for the Hyprland session to fully reflect the removed PATH."
 echo ""
 echo "Note: uv itself was NOT removed. To remove it manually:"
 echo "  rm ~/.local/bin/uv"

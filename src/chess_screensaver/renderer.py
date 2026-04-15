@@ -88,7 +88,7 @@ class Renderer:
         lines = layout['lines']
         cols  = layout['cols']
 
-        if lines < 13 or cols < 50:
+        if lines < 13 or cols < 60:
             msg = 'Terminal too small — please resize'
             self._safe_addstr(lines // 2, max(0, (cols - len(msg)) // 2),
                               msg, curses.color_pair(CP_DEFAULT))
@@ -149,7 +149,7 @@ class Renderer:
 
             for file in range(8):
                 sq = chess.square(file, rank)
-                x  = board_x + 2 + file * 3  # 2 chars for rank label
+                x  = board_x + 2 + file * 4  # 2 chars for rank label
 
                 light      = is_light_square(sq)
                 is_faded   = sq in faded
@@ -175,11 +175,11 @@ class Renderer:
                     else:
                         attr = curses.color_pair(CP_BLACK_PIECE)
 
-                cell = f'[{char}]' if is_hl else f' {char} '
+                cell = f'[{char}] ' if is_hl else f' {char}  '
                 self._safe_addstr(y, x, cell, attr)
 
-        # File labels: "   a  b  c  d  e  f  g  h"
-        file_row = '  ' + ''.join(f' {chr(ord("a") + f)} ' for f in range(8))
+        # File labels: "   a   b   c   d   e   f   g   h"
+        file_row = '  ' + ''.join(f' {chr(ord("a") + f)}  ' for f in range(8))
         self._safe_addstr(board_y + 8, board_x, file_row, curses.color_pair(CP_DIM))
 
     # ------------------------------------------------------------------
@@ -225,11 +225,10 @@ class Renderer:
 
         y += 1  # blank line
 
-        # Opening
+        # Opening (may be long — wrap up to 2 lines)
         opening = metadata.get('opening', '')
         if opening:
-            self._write_kv('Opening: ', opening, y, info_x, info_w)
-            y += 1
+            y += self._draw_wrapped_kv('Opening: ', opening, y, info_x, info_w)
 
         # Time control
         tc = _format_time_control(metadata.get('time_control', ''))
@@ -309,11 +308,42 @@ class Renderer:
         if len(text) > info_w:
             text = text[:info_w]
 
-        label_part = ' ' + label
+        label_part = (' ' + label)[:info_w]
         value_part = text[len(label_part):]
 
         self._safe_addstr(y, info_x, label_part, label_attr)
-        self._safe_addstr(y, info_x + len(label_part), value_part, value_attr)
+        if value_part:
+            self._safe_addstr(y, info_x + len(label_part), value_part, value_attr)
+
+    def _draw_wrapped_kv(self, label, value, y, info_x, info_w, max_lines=2):
+        """
+        Like _write_kv but wraps the value across up to max_lines lines.
+        Returns the number of lines consumed.
+        """
+        label_attr = curses.color_pair(CP_LABEL)
+        value_attr = curses.color_pair(CP_VALUE)
+
+        label_part  = (' ' + label)[:info_w]
+        first_avail = max(0, info_w - len(label_part))
+        indent      = len(label_part)
+
+        # First line: label + as much value as fits
+        self._safe_addstr(y, info_x, label_part, label_attr)
+        if first_avail > 0:
+            self._safe_addstr(y, info_x + indent, value[:first_avail], value_attr)
+
+        remainder  = value[first_avail:]
+        lines_used = 1
+
+        # Continuation lines indented to align with value column
+        cont_avail = max(0, info_w - indent)
+        while remainder and lines_used < max_lines and cont_avail > 0:
+            part      = remainder[:cont_avail]
+            remainder = remainder[cont_avail:]
+            self._safe_addstr(y + lines_used, info_x + indent, part, value_attr)
+            lines_used += 1
+
+        return lines_used
 
     def _safe_addstr(self, y, x, text, attr=0):
         try:

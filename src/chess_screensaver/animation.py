@@ -80,7 +80,9 @@ def _play_game(stdscr, renderer, game, speed):
     highlight = None
 
     layout = calculate_layout(curses.LINES, curses.COLS)
-    renderer.draw_full(board, metadata, move_log, highlight, layout)
+
+    if _wipe_board(stdscr, renderer, board, metadata, layout):
+        return 'quit'
 
     if _timed_wait(stdscr, speed):
         return 'quit'
@@ -96,6 +98,13 @@ def _play_game(stdscr, renderer, game, speed):
         from_sq = move.from_square
         to_sq   = move.to_square
         san     = board.san(move)
+
+        # Phase 1 — "lift": show piece at source with destination marked
+        # Duration is 25% of the move speed (e.g. 0.5s at a 2s pace)
+        renderer.draw_full(board, metadata, move_log, (from_sq, to_sq), layout)
+        if _timed_wait(stdscr, speed * 0.25):
+            return 'quit'
+
         board.push(move)
 
         move_num = ply // 2 + 1
@@ -107,8 +116,8 @@ def _play_game(stdscr, renderer, game, speed):
             prev = move_log[-1]
             move_log[-1] = (prev[0], prev[1], san)
 
+        # Phase 2 — "land": show piece at destination
         highlight = (from_sq, to_sq)
-
         renderer.draw_full(board, metadata, move_log, highlight, layout)
 
         if _timed_wait(stdscr, speed):
@@ -124,6 +133,39 @@ def _play_game(stdscr, renderer, game, speed):
         return 'quit'
 
     return 'next'
+
+
+# ---------------------------------------------------------------------------
+# Wipe-in effect
+# ---------------------------------------------------------------------------
+
+def _wipe_board(stdscr, renderer, board, metadata, layout):
+    """
+    Reveal the starting position with a left-to-right column wipe (file a → h).
+    Returns True if the user pressed a key.
+    """
+    occupied = [sq for sq in chess.SQUARES if board.piece_at(sq) is not None]
+    if not occupied:
+        return False
+
+    # Group squares by file (0 = a … 7 = h)
+    by_file: list[list[int]] = [[] for _ in range(8)]
+    for sq in occupied:
+        by_file[chess.square_file(sq)].append(sq)
+
+    faded: set[int] = set(occupied)  # start fully hidden
+
+    delay = 0.08  # seconds between each column reveal
+
+    for file_idx in range(8):
+        if _check_quit(stdscr):
+            return True
+        faded -= set(by_file[file_idx])
+        renderer.draw_full(board, metadata, [], None, layout,
+                           faded_squares=faded)
+        time.sleep(delay)
+
+    return False
 
 
 # ---------------------------------------------------------------------------

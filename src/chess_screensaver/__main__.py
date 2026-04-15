@@ -12,8 +12,8 @@ def main():
         description='Chess screensaver for Omarchy — replays elite Grandmaster games.',
     )
     parser.add_argument(
-        '--speed', type=float, default=1.0, metavar='SECONDS',
-        help='Seconds between moves (default: 1.0; use 0.5 for 2 moves/sec)',
+        '--speed', type=float, default=2.0, metavar='SECONDS',
+        help='Seconds between moves (default: 2.0; use 0.5 for 2 moves/sec)',
     )
     args = parser.parse_args()
 
